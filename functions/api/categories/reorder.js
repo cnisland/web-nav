@@ -1,4 +1,5 @@
 import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty } from '../../_middleware';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 
 const REORDER_CHUNK_SIZE = 100;
 
@@ -38,6 +39,8 @@ export async function onRequestPost(context) {
     }
 
     await markHomeCacheDirty(env, 'all');
+
+    await triggerAutoBackup(context, env);
 
     return jsonResponse({
       code: 200,

@@ -131,27 +131,12 @@ export async function onRequestPost(context) {
   try {
     const prepared = await prepareWebdav(context, 'webdav_backup', '备份请求过于频繁，请稍后再试');
     if (prepared.error) return prepared.error;
-    const { config, baseUrl, password } = prepared;
 
-    const data = await fetchBookmarkExport(env, { includePrivate: true });
-    const content = JSON.stringify(data, null, 2);
-    const byteLength = getUtf8ByteLength(content);
-    const restorableCheck = validateRestorableBackup(data, byteLength);
-    if (!restorableCheck.ok) {
-      return errorResponse(`无法创建可恢复的备份: ${restorableCheck.message}`, 413);
-    }
-    const filename = buildBackupFilename();
-
-    const result = await uploadToWebdav({
-      baseUrl,
-      dir: config.webdav_dir || '',
-      filename,
-      username: config.webdav_username || '',
-      password,
-      content,
-    });
-
+    const result = await performBackup(env, prepared.config);
     if (!result.ok) {
+      if (result.restorable) {
+        return errorResponse(`无法创建可恢复的备份: ${result.message}`, 413);
+      }
       return errorResponse(`备份失败: ${result.message}`, 502);
     }
 
@@ -159,15 +144,58 @@ export async function onRequestPost(context) {
       code: 200,
       message: '备份成功',
       data: {
-        filename,
-        size: byteLength,
-        categoryCount: data.category.length,
-        siteCount: data.sites.length,
+        filename: result.filename,
+        size: result.size,
+        categoryCount: result.categoryCount,
+        siteCount: result.siteCount,
       },
     });
   } catch (e) {
     return errorResponse(`备份失败: ${e.message}`, 500);
   }
+}
+
+/**
+ * 执行一次完整备份（导出分类与书签 → 校验可恢复 → 上传 WebDAV）。
+ * 供手动备份接口与「书签变化自动备份」共用，保证两条路径产物一致。
+ * @param {object} env - Cloudflare env（需要 NAV_DB 绑定）
+ * @param {object|null} config - 已读取的 WebDAV 配置；省略时内部自行读取 settings
+ * @returns {Promise<{ok: boolean, restorable?: boolean, message?: string, filename?: string, size?: number, categoryCount?: number, siteCount?: number}>}
+ */
+export async function performBackup(env, config = null) {
+  const cfg = config || await loadWebdavConfig(env);
+  const baseUrl = String(cfg.webdav_url || '').trim();
+  const password = String(cfg.webdav_password || '');
+
+  const data = await fetchBookmarkExport(env, { includePrivate: true });
+  const content = JSON.stringify(data, null, 2);
+  const byteLength = getUtf8ByteLength(content);
+  const restorableCheck = validateRestorableBackup(data, byteLength);
+  if (!restorableCheck.ok) {
+    return { ok: false, restorable: true, message: restorableCheck.message };
+  }
+  const filename = buildBackupFilename();
+
+  const result = await uploadToWebdav({
+    baseUrl,
+    dir: cfg.webdav_dir || '',
+    filename,
+    username: cfg.webdav_username || '',
+    password,
+    content,
+  });
+
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+
+  return {
+    ok: true,
+    filename,
+    size: byteLength,
+    categoryCount: data.category.length,
+    siteCount: data.sites.length,
+  };
 }
 
 /**

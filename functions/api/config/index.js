@@ -2,6 +2,7 @@
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { escapeLikePattern, buildFaviconUrl, getUrlMatchCandidates, normalizeUrlForStorage, parsePagination } from '../../lib/utils';
 import { normalizeBookmarkDesc, normalizeBookmarkLogo, normalizeBookmarkName, normalizeBookmarkUrl } from '../../lib/validators';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 
 const MAX_CONFIG_SEARCH_KEYWORD_LENGTH = 100;
 
@@ -65,6 +66,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+
   
   if (!(await isAdminAuthenticated(request, env))) {
     return errorResponse('Unauthorized', 401);
@@ -131,6 +133,8 @@ export async function onRequestPost(context) {
     `).bind(sanitizedName, sanitizedUrl, sanitizedLogo, sanitizedDesc, catelogId, categoryResult.catelog, sortOrderValue, finalIsPrivate).run();
 
     await markHomeCacheDirty(env, finalIsPrivate ? 'private' : 'all');
+
+    await triggerAutoBackup(context, env);
 
     return jsonResponse({
       code: 201,

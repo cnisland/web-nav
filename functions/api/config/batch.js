@@ -1,4 +1,5 @@
 import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty } from '../../_middleware';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -40,7 +41,8 @@ export async function onRequestPost(context) {
 
       await env.NAV_DB.batch(statements);
       await markHomeCacheDirty(env, 'all');
-      
+      await triggerAutoBackup(context, env);
+
       return jsonResponse({
         code: 200,
         message: `成功删除 ${ids.length} 条项目`
@@ -73,6 +75,7 @@ export async function onRequestPost(context) {
 
       await env.NAV_DB.batch(statements);
       await markHomeCacheDirty(env, 'all');
+      await triggerAutoBackup(context, env);
 
       return jsonResponse({
         code: 200,
@@ -96,6 +99,7 @@ export async function onRequestPost(context) {
 
       await env.NAV_DB.batch(statements);
       await markHomeCacheDirty(env, 'all');
+      await triggerAutoBackup(context, env);
 
       return jsonResponse({
         code: 200,
@@ -129,6 +133,7 @@ export async function onRequestPost(context) {
       }
 
       await markHomeCacheDirty(env, 'all');
+      await triggerAutoBackup(context, env);
 
       return jsonResponse({
         code: 200,

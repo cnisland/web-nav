@@ -7,7 +7,8 @@ import { validateOpaqueText } from '../lib/validators';
 const LAYOUT_SETTING_KEYS = new Set(getSettingsKeys());
 const AI_SETTING_KEYS = new Set(['provider', 'apiKey', 'baseUrl', 'model']);
 // WebDAV 配置刻意不进 SETTINGS_SCHEMA：那份 schema 会被公开接口 /api/public-config 整体吐出去
-const WEBDAV_SETTING_KEYS = new Set(['webdav_url', 'webdav_username', 'webdav_password', 'webdav_dir']);
+// auto_backup_enabled 同样挂在备份配置下：不进 public-config，也不进 settings_cache（不影响首页渲染）
+const WEBDAV_SETTING_KEYS = new Set(['webdav_url', 'webdav_username', 'webdav_password', 'webdav_dir', 'auto_backup_enabled']);
 const IGNORED_SETTING_KEYS = new Set(['has_api_key', 'debug_api_key_info', 'has_webdav_password']);
 const ALLOWED_PROVIDERS = new Set(['workers-ai', 'gemini', 'openai']);
 
@@ -15,6 +16,13 @@ function normalizeWebdavSettingValue(key, value) {
   // 密码属于不透明凭据，首尾空格可能是密码本身的一部分，不能做 trim。
   const rawText = String(value ?? '');
   const text = key === 'webdav_password' ? rawText : rawText.trim();
+
+  if (key === 'auto_backup_enabled') {
+    const normalized = String(value ?? '').trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') return { ok: true, value: 'true' };
+    if (normalized === 'false' || normalized === '0' || normalized === '') return { ok: true, value: 'false' };
+    return { ok: false, message: 'Invalid auto_backup_enabled' };
+  }
 
   if (key === 'webdav_url') {
     if (!text) return { ok: true, value: '' };

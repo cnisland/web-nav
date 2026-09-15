@@ -1,6 +1,7 @@
 // functions/api/categories/[id].js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { normalizeCategoryName } from '../../lib/validators';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 
 function buildPrivateDescendantStatements(env, categoryId) {
   const descendantsCte = `
@@ -67,7 +68,8 @@ export async function onRequestPut(context) {
         .run();
 
       await markHomeCacheDirty(env, 'all');
-      
+      await triggerAutoBackup(context, env);
+
       return jsonResponse({
         code: 200,
         message: 'Category deleted successfully'
@@ -138,6 +140,8 @@ export async function onRequestPut(context) {
     await env.NAV_DB.batch(batchStmts);
 
     await markHomeCacheDirty(env, 'all');
+
+    await triggerAutoBackup(context, env);
 
     return jsonResponse({
       code: 200,

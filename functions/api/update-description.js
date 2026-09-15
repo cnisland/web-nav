@@ -2,6 +2,7 @@
 import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty } from '../_middleware';
 import { buildFaviconUrl } from '../lib/utils';
 import { normalizeBookmarkDesc, normalizeBookmarkLogo, normalizeOptionalBookmarkUrl } from '../lib/validators';
+import { triggerAutoBackup } from '../lib/auto-backup';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -49,6 +50,8 @@ export async function onRequestPost(context) {
     }
 
     await markHomeCacheDirty(env, site.is_private ? 'private' : 'all');
+
+    await triggerAutoBackup(context, env);
 
     // 4. 返回成功响应
     return jsonResponse({

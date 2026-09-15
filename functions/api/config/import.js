@@ -1,6 +1,7 @@
 // functions/api/config/import.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { getUrlMatchCandidates, normalizeUrlForStorage } from '../../lib/utils';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 import {
     normalizeBookmarkDesc,
     normalizeBookmarkLogo,
@@ -422,6 +423,7 @@ export async function onRequestPost(context) {
 
     if (didMutate) {
         await markHomeCacheDirty(env, 'all');
+        await triggerAutoBackup(context, env);
     }
 
     let msg = `导入完成。`;

@@ -18,6 +18,7 @@
     'mobile_layout_hide_links',
     'mobile_layout_hide_category',
     'mobile_layout_enable_frosted_glass',
+    'auto_backup_enabled',
   ];
 
   // 空串语义是「回退到默认值」，所以服务端给空值时跳过赋值，保留 createDefaultSettings 的默认
@@ -167,6 +168,7 @@
       webdav_password: '',
       webdav_dir: '',
       has_webdav_password: false,
+      auto_backup_enabled: false,
     };
   }
 

@@ -2,6 +2,7 @@
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { buildFaviconUrl, getUrlMatchCandidates, normalizeUrlForStorage } from '../../lib/utils';
 import { normalizeBookmarkDesc, normalizeBookmarkLogo, normalizeBookmarkName, normalizeBookmarkUrl } from '../../lib/validators';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 
 
 export async function onRequestGet(context) {
@@ -102,6 +103,8 @@ export async function onRequestPut(context) {
     const dirtyScope = (existing.is_private === 1 && finalIsPrivate === 1) ? 'private' : 'all';
     await markHomeCacheDirty(env, dirtyScope);
 
+    await triggerAutoBackup(context, env);
+
     return jsonResponse({
       code: 200,
       message: 'Config updated successfully',
@@ -129,6 +132,8 @@ export async function onRequestDelete(context) {
     const del = await env.NAV_DB.prepare('DELETE FROM sites WHERE id = ?').bind(id).run();
 
     await markHomeCacheDirty(env, existing.is_private ? 'private' : 'all');
+
+    await triggerAutoBackup(context, env);
 
     return jsonResponse({
       code: 200,

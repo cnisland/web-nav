@@ -213,6 +213,7 @@
     currentSettings.webdav_url = backupRefs.urlInput?.value.trim() || '';
     currentSettings.webdav_username = backupRefs.usernameInput?.value.trim() || '';
     currentSettings.webdav_dir = backupRefs.dirInput?.value.trim() || '';
+    currentSettings.auto_backup_enabled = !!backupRefs.autoBackupSwitch?.checked;
     // 密码语义与备份前落库共用同一份判断，避免两处实现漂移
     const resolvedWebdavPassword = (ns.defaults?.resolveWebdavPasswordForPayload?.(
       backupRefs.passwordInput?.value || '',
@@ -380,6 +381,7 @@
     setValue(backupRefs.urlInput, currentSettings.webdav_url || '');
     setValue(backupRefs.usernameInput, currentSettings.webdav_username || '');
     setValue(backupRefs.dirInput, currentSettings.webdav_dir || '');
+    setChecked(backupRefs.autoBackupSwitch, currentSettings.auto_backup_enabled);
 
     window.AdminSettings?.backup?.syncPasswordField?.();
   }

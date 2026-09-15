@@ -6,6 +6,7 @@
     if (cachedRefs) return cachedRefs;
 
     const refs = {
+      autoBackupSwitch: document.getElementById('autoBackupSwitch'),
       urlInput: document.getElementById('webdavUrl'),
       usernameInput: document.getElementById('webdavUsername'),
       passwordInput: document.getElementById('webdavPassword'),

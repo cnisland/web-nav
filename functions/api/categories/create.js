@@ -1,6 +1,7 @@
 // functions/api/categories/create.js
 import { isAdminAuthenticated, errorResponse, jsonResponse, normalizeSortOrder, markHomeCacheDirty } from '../../_middleware';
 import { normalizeCategoryName } from '../../lib/validators';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -50,6 +51,8 @@ export async function onRequestPost(context) {
     `).bind(categoryName, sortOrderValue, parentId, isPrivate).run();
 
     await markHomeCacheDirty(env, isPrivate ? 'private' : 'all');
+
+    await triggerAutoBackup(context, env);
 
     return jsonResponse({
       code: 201,

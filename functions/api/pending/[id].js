@@ -2,6 +2,7 @@
 import { isAdminAuthenticated, errorResponse, jsonResponse, markHomeCacheDirty, normalizeSortOrder } from '../../_middleware';
 import { buildFaviconUrl, getUrlMatchCandidates, normalizeUrlForStorage } from '../../lib/utils';
 import { normalizeBookmarkDesc, normalizeBookmarkLogo, normalizeBookmarkName, normalizeBookmarkUrl } from '../../lib/validators';
+import { triggerAutoBackup } from '../../lib/auto-backup';
 
 export async function onRequestPut(context) {
   const { request, env, params } = context;
@@ -90,6 +91,8 @@ export async function onRequestPut(context) {
     await env.NAV_DB.prepare('DELETE FROM pending_sites WHERE id = ?').bind(id).run();
 
     await markHomeCacheDirty(env, finalIsPrivate ? 'private' : 'all');
+
+    await triggerAutoBackup(context, env);
 
     return jsonResponse({
       code: 200,
