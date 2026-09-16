@@ -1419,15 +1419,17 @@
           <!-- 备份设置内容 -->
           <div id="backup-settings" class="settings-tab-content">
             <div class="form-group-stack">
-              <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                <div>
-                  <label for="autoBackupSwitch" class="form-label-icon cursor-pointer select-none">🔁 自动备份</label>
-                  <p class="form-hint m-0">开启后，每次新增 / 修改 / 删除 / 排序书签或分类，都会自动往 WebDAV 写一份带时间戳的新备份。需先在上方配好 WebDAV。</p>
+              <div>
+                <div class="flex items-center" style="gap: 0.5rem;">
+                  <label for="autoBackupSwitch" class="form-label-icon cursor-pointer select-none" style="margin-bottom: 0;">
+                    <span>🔁</span> 自动备份
+                  </label>
+                  <label class="switch">
+                    <input type="checkbox" id="autoBackupSwitch">
+                    <span class="slider round"></span>
+                  </label>
                 </div>
-                <label class="switch">
-                  <input type="checkbox" id="autoBackupSwitch">
-                  <span class="slider round"></span>
-                </label>
+                <p class="form-hint">开启后，每次新增 / 修改 / 删除 / 排序书签或分类，都会自动往 WebDAV 写一份带时间戳的新备份。需先在下方配好 WebDAV。</p>
               </div>
 
               <div>
