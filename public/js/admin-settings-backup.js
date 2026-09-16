@@ -24,6 +24,34 @@
   }
 
   /**
+   * 开关切换即落库，不依赖模态框底部「保存设置」按钮。
+   * 开关和「立即备份 / 获取备份」同处一个 tab，用户切完开关很可能直接关面板，
+   * 若只靠底部全局保存按钮，状态永远不会写进 DB，下次打开又回到默认关闭。
+   * fetch 的 X-CSRF-Token 由 admin-cache.js 对 window.fetch 的补丁自动附加。
+   */
+  async function saveAutoBackupEnabled() {
+    const refs = getBackupRefs();
+    const enabled = !!refs.autoBackupSwitch?.checked;
+    const previous = currentSettings.auto_backup_enabled;
+
+    currentSettings.auto_backup_enabled = enabled;
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auto_backup_enabled: enabled }),
+      });
+      const data = await res.json();
+      if (data.code !== 200) throw new Error(data.message || '保存失败');
+      window.showMessage(enabled ? '已开启书签变化自动备份' : '已关闭书签变化自动备份', 'success');
+    } catch (e) {
+      currentSettings.auto_backup_enabled = previous;
+      if (refs.autoBackupSwitch) refs.autoBackupSwitch.checked = !!previous;
+      window.showMessage('自动备份开关保存失败: ' + (e.message || '网络错误'), 'error');
+    }
+  }
+
+  /**
    * 只保存 WebDAV 字段。备份与恢复都以当前可见表单为准，每次操作前都落库，
    * 避免多标签页修改配置后，界面显示的目标与后端实际使用的目标不一致。
    */
@@ -325,6 +353,7 @@
   function init() {
     const refs = getBackupRefs();
     if (!refs.backupBtn) return false;
+    refs.autoBackupSwitch?.addEventListener('change', saveAutoBackupEnabled);
     refs.backupBtn.addEventListener('click', runBackup);
     refs.clearPasswordBtn?.addEventListener('click', requestClearWebdavPassword);
     refs.listBtn?.addEventListener('click', fetchBackupList);
@@ -351,6 +380,7 @@
     init,
     getBackupRefs,
     syncPasswordField,
+    saveAutoBackupEnabled,
     clearWebdavPassword,
     requestClearWebdavPassword,
     runBackup,
